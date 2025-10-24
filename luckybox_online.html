@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Lucky Box Game (Online One-Link Version)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:18px;padding:12px;max-width:900px}
+    h1{text-align:center;font-size:1.6rem;margin-bottom:8px}
+    .hint{color:#666;font-size:.9rem;text-align:center;margin-bottom:20px}
+    #adminPanel{display:none;border:1px solid #ccc;padding:12px;border-radius:8px;background:#f8f8f8;margin-bottom:20px}
+    label{display:block;margin:6px 0;font-weight:600}
+    input[type=number]{width:120px;padding:8px;font-size:1rem}
+    button{padding:8px 12px;font-size:1rem;margin:6px;cursor:pointer}
+    #boxArea{margin-top:18px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+    .box{width:120px;height:120px;border-radius:12px;border:3px solid #444;display:flex;align-items:center;justify-content:center;
+         font-size:1rem;cursor:pointer;user-select:none;background:#fff;transition:transform .12s}
+    .box:active{transform:scale(.98)}
+    .locked{cursor:default;opacity:.7}
+    .winner{border-color:green;color:green;font-weight:700}
+    .loser{border-color:#b00;color:#b00}
+    .info{text-align:center;margin-top:14px;color:#333}
+    footer{margin-top:20px;color:#777;font-size:.9rem;text-align:center}
+  </style>
+</head>
+<body>
+  <h1>🎁 Lucky Box</h1>
+  <p class="hint">Click one box to test your luck! Each round has only one winner.</p>
+
+  <div style="text-align:center;margin-bottom:10px;">
+    <button id="toggleAdminBtn">Show Admin Panel</button>
+  </div>
+
+  <div id="adminPanel">
+    <h3>Admin Panel</h3>
+    <label>Number of boxes: <input id="numBoxes" type="number" min="2" value="10"></label>
+    <div style="margin-top:8px">
+      <button id="generateBtn">Generate New Game</button>
+      <button id="hideAdminBtn">Hide Admin Panel</button>
+    </div>
+    <p style="color:#555;font-size:.9rem;">Click "Generate New Game" to randomize the winner and reset all boxes.</p>
+  </div>
+
+  <div class="info" id="status">Status: <strong>Waiting for admin to generate game...</strong></div>
+  <div id="boxArea" aria-live="polite"></div>
+
+  <footer>Plain & simple Lucky Box Game — one link for everyone. Created for fun offline or online use.</footer>
+
+<script>
+(function(){
+  const numEl = document.getElementById('numBoxes');
+  const genBtn = document.getElementById('generateBtn');
+  const boxArea = document.getElementById('boxArea');
+  const statusEl = document.getElementById('status');
+  const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+  const adminPanel = document.getElementById('adminPanel');
+  const hideAdminBtn = document.getElementById('hideAdminBtn');
+
+  const STORAGE_KEY = 'luckybox_online_game';
+
+  toggleAdminBtn.addEventListener('click', ()=>{
+    adminPanel.style.display = 'block';
+    toggleAdminBtn.style.display = 'none';
+  });
+  hideAdminBtn.addEventListener('click', ()=>{
+    adminPanel.style.display = 'none';
+    toggleAdminBtn.style.display = 'inline-block';
+  });
+
+  function saveGame(g){ localStorage.setItem(STORAGE_KEY, JSON.stringify(g)); }
+  function loadGame(){ const j = localStorage.getItem(STORAGE_KEY); return j? JSON.parse(j):null; }
+
+  function generateGame(){
+    const n = parseInt(numEl.value,10);
+    if(!n || n < 2){ alert('Enter at least 2 boxes'); return; }
+    const win = Math.floor(Math.random()*n)+1;
+    const g = { id: Date.now(), total:n, winner:win };
+    saveGame(g);
+    renderBoxes(g);
+    statusEl.innerHTML = `<strong>Game ready:</strong> ${n} boxes. Winner hidden.`;
+  }
+
+  function renderBoxes(g){
+    boxArea.innerHTML = '';
+    for(let i=1;i<=g.total;i++){
+      const b = document.createElement('div');
+      b.className='box';
+      b.textContent = `Box ${i}`;
+      b.addEventListener('click', ()=>clickBox(g,b,i));
+      boxArea.appendChild(b);
+    }
+  }
+
+  function clickBox(g,boxEl,idx){
+    if(boxArea.classList.contains('locked')) return;
+    const isWin = (idx===g.winner);
+    if(isWin){
+      boxEl.classList.add('winner');
+      boxEl.textContent='🎉 You won!';
+    } else {
+      boxEl.classList.add('loser');
+      boxEl.textContent='Better luck next time';
+    }
+    lockAllBoxes(g,idx);
+    statusEl.innerHTML = `<strong>Round ended:</strong> Box ${idx} clicked.`;
+  }
+
+  function lockAllBoxes(g,clickedIdx){
+    const boxes = document.querySelectorAll('.box');
+    boxArea.classList.add('locked');
+    boxes.forEach(b=>{
+      b.style.pointerEvents='none';
+      const id=parseInt(b.textContent.replace('Box ',''));
+      if(id===g.winner && id!==clickedIdx){
+        b.classList.add('winner');
+        b.textContent='Winner';
+      } else if(id!==clickedIdx && id!==g.winner){
+        b.classList.add('loser');
+        b.textContent='Not this one';
+      }
+    });
+  }
+
+  genBtn.addEventListener('click', generateGame);
+
+  const existing = loadGame();
+  if(existing){ renderBoxes(existing); statusEl.innerHTML = `<strong>Game loaded:</strong> ${existing.total} boxes.`; }
+})();
+</script>
+</body>
+</html>
