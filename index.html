@@ -282,9 +282,16 @@
 })();
 </script>
   </script>
-<!-- Admin Panel Section -->
-<style>
-  #adminLoginBtn {
+// Show/Hide panel when clicking "Admin" button
+adminLoginBtn.addEventListener('click', () => {
+  if (adminPanel.style.display === 'block') {
+    adminPanel.style.display = 'none';
+  } else {
+    adminPanel.style.display = 'block';
+    adminPasswordInput.focus();
+  }
+});
+
     position: fixed;
     bottom: 20px;
     right: 20px;
