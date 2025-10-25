@@ -281,5 +281,34 @@
 
 })();
 </script>
+  </script>
+
+<!-- Firebase SDK -->
+<script type="module">
+  // Import the Firebase libraries
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+  // Your Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCKTB6dXTu00jEr7qhRVcA2sgywA1QOPxg",
+    authDomain: "markito-luckybox.firebaseapp.com",
+    projectId: "markito-luckybox",
+    storageBucket: "markito-luckybox.firebasestorage.app",
+    messagingSenderId: "167771824387",
+    appId: "1:167771824387:web:781b2ac43d735086760936",
+    measurementId: "G-RGHR4F4N3Q"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  console.log("✅ Firebase connected successfully!");
+</script>
+
+</body>
+</html>
+
 </body>
 </html>
