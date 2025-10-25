@@ -2,129 +2,283 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Lucky Box Game (Online One-Link Version)</title>
+  <title>Mwosiemo Lucky Box Challenge</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:18px;padding:12px;max-width:900px}
-    h1{text-align:center;font-size:1.6rem;margin-bottom:8px}
-    .hint{color:#666;font-size:.9rem;text-align:center;margin-bottom:20px}
-    #adminPanel{display:none;border:1px solid #ccc;padding:12px;border-radius:8px;background:#f8f8f8;margin-bottom:20px}
-    label{display:block;margin:6px 0;font-weight:600}
-    input[type=number]{width:120px;padding:8px;font-size:1rem}
-    button{padding:8px 12px;font-size:1rem;margin:6px;cursor:pointer}
+    :root{
+      --blue:#0a4fb4;
+      --gold:#d4a017;
+      --bg:#0f1724;
+      --card:#ffffff;
+      --muted:#9aa6bf;
+    }
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg, #eaf3ff 0%, #f8fbff 40%, #ffffff 100%);color:#05204a}
+    .wrap{max-width:980px;margin:18px auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{margin:0;font-size:1.4rem;color:var(--blue)}
+    .subtitle{color:var(--muted);font-size:.95rem}
+    .center{text-align:center}
+    .controls{margin:16px 0;padding:12px;border-radius:10px;background:linear-gradient(90deg, rgba(10,79,180,0.05), rgba(212,160,23,0.03));border:1px solid rgba(10,79,180,0.07)}
+    .btn{background:var(--blue);color:#fff;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn.secondary{background:var(--gold);color:#05204a}
+    .adminToggle{background:transparent;border:2px solid var(--blue);color:var(--blue);padding:8px 10px;border-radius:8px;cursor:pointer}
+    #adminPanel{display:none;margin-top:10px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);background:#fff}
+    label{display:block;margin:8px 0;font-weight:600;color:#0a2752}
+    input[type=number]{width:120px;padding:8px;border-radius:6px;border:1px solid #ccd6ea}
+    .muted{color:var(--muted);font-size:.92rem}
     #boxArea{margin-top:18px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
-    .box{width:120px;height:120px;border-radius:12px;border:3px solid #444;display:flex;align-items:center;justify-content:center;
-         font-size:1rem;cursor:pointer;user-select:none;background:#fff;transition:transform .12s}
+    .box{width:120px;height:120px;border-radius:12px;border:3px solid #284a9f;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;user-select:none;background:#fff;box-shadow:0 6px 18px rgba(10,79,180,0.06);transition:transform .12s}
     .box:active{transform:scale(.98)}
-    .locked{cursor:default;opacity:.7}
-    .winner{border-color:green;color:green;font-weight:700}
+    .box.locked{pointer-events:none;opacity:.75}
+    .winner{border-color:green;color:green;font-weight:800}
     .loser{border-color:#b00;color:#b00}
-    .info{text-align:center;margin-top:14px;color:#333}
-    footer{margin-top:20px;color:#777;font-size:.9rem;text-align:center}
+    .status{margin-top:12px;text-align:center;color:#0a2752;font-weight:600}
+    footer{margin-top:22px;color:var(--muted);text-align:center;font-size:.9rem}
+    /* Welcome overlay */
+    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:40}
+    .welcomeCard{width:calc(100% - 40px);max-width:760px;padding:28px;border-radius:14px;background:linear-gradient(180deg,#ffffff, #f6fbff);box-shadow:0 20px 60px rgba(6,25,80,0.12);border:1px solid rgba(10,79,180,0.06);text-align:center}
+    .welcomeTitle{font-size:1.6rem;color:var(--blue);margin:0 0 8px}
+    .welcomeText{color:var(--muted);margin-bottom:18px}
+    .startBtn{background:linear-gradient(90deg,var(--blue),#2f61ff);border:none;color:#fff;padding:12px 20px;border-radius:10px;font-weight:700;cursor:pointer}
+    /* confetti canvas */
+    #confettiCanvas{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:10;mix-blend-mode:normal;opacity:.95}
+    /* responsive */
+    @media (max-width:520px){ .box{width:94px;height:94px;font-size:.9rem} .welcomeCard{padding:18px} }
   </style>
 </head>
 <body>
-  <h1>🎁 Lucky Box</h1>
-  <p class="hint">Click one box to test your luck! Each round has only one winner.</p>
+  <canvas id="confettiCanvas"></canvas>
 
-  <div style="text-align:center;margin-bottom:10px;">
-    <button id="toggleAdminBtn">Show Admin Panel</button>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Mwosiemo Lucky Box Challenge</h1>
+        <div class="subtitle">Blue & Gold theme — one winner per round</div>
+      </div>
+      <div style="text-align:right">
+        <button id="toggleAdmin" class="adminToggle">Show Admin Panel</button>
+      </div>
+    </header>
+
+    <section class="controls">
+      <div class="muted center">Share this single link with players. Admin must generate each round.</div>
+
+      <div id="adminPanel">
+        <h3 style="margin:0 0 6px">Admin Panel</h3>
+        <label>Number of boxes:
+          <input id="numBoxes" type="number" min="2" value="10" />
+        </label>
+        <div style="margin-top:8px">
+          <button id="generateBtn" class="btn">Generate New Game</button>
+          <button id="hideAdmin" class="btn secondary">Hide Admin Panel</button>
+        </div>
+        <p class="muted" style="margin-top:10px">After clicking "Generate New Game", the round is active and players can click one box each. Generate again to reset for a new round.</p>
+      </div>
+    </section>
+
+    <div class="status center" id="status">Status: <strong id="statusText">Waiting for admin to generate game...</strong></div>
+
+    <div id="boxArea" aria-live="polite"></div>
+
+    <footer>Created for fun — admin controls rounds. Not secure for high-stakes contests.</footer>
   </div>
-
-  <div id="adminPanel">
-    <h3>Admin Panel</h3>
-    <label>Number of boxes: <input id="numBoxes" type="number" min="2" value="10"></label>
-    <div style="margin-top:8px">
-      <button id="generateBtn">Generate New Game</button>
-      <button id="hideAdminBtn">Hide Admin Panel</button>
-    </div>
-    <p style="color:#555;font-size:.9rem;">Click "Generate New Game" to randomize the winner and reset all boxes.</p>
-  </div>
-
-  <div class="info" id="status">Status: <strong>Waiting for admin to generate game...</strong></div>
-  <div id="boxArea" aria-live="polite"></div>
-
-  <footer>Plain & simple Lucky Box Game — one link for everyone. Created for fun offline or online use.</footer>
 
 <script>
-(function(){
-  const numEl = document.getElementById('numBoxes');
-  const genBtn = document.getElementById('generateBtn');
-  const boxArea = document.getElementById('boxArea');
-  const statusEl = document.getElementById('status');
-  const toggleAdminBtn = document.getElementById('toggleAdminBtn');
-  const adminPanel = document.getElementById('adminPanel');
-  const hideAdminBtn = document.getElementById('hideAdminBtn');
+/* ===========================
+   Confetti - simple continuous particle system
+   =========================== */
+(function confettiInit(){
+  const canvas = document.getElementById('confettiCanvas');
+  const ctx = canvas.getContext('2d');
+  let W = canvas.width = window.innerWidth;
+  let H = canvas.height = window.innerHeight;
+  const colors = ['#0a4fb4','#2f61ff','#ffd86b','#d4a017','#ffffff','#89b4ff'];
+  const particles = [];
+  const total = 80;
+  function rand(min,max){ return Math.random()*(max-min)+min; }
+  function resetParticle(p){
+    p.x = rand(0,W);
+    p.y = rand(-H,0);
+    p.size = rand(6,14);
+    p.speedY = rand(1,3.6);
+    p.speedX = rand(-0.6,0.6);
+    p.rot = rand(0,Math.PI*2);
+    p.rotSpeed = rand(-0.05,0.05);
+    p.color = colors[Math.floor(Math.random()*colors.length)];
+  }
+  for(let i=0;i<total;i++){ const p={x:0,y:0,size:0,speedY:0,speedX:0,rot:0,rotSpeed:0,color:'#fff'}; resetParticle(p); particles.push(p); }
 
-  const STORAGE_KEY = 'luckybox_online_game';
-
-  toggleAdminBtn.addEventListener('click', ()=>{
-    adminPanel.style.display = 'block';
-    toggleAdminBtn.style.display = 'none';
-  });
-  hideAdminBtn.addEventListener('click', ()=>{
-    adminPanel.style.display = 'none';
-    toggleAdminBtn.style.display = 'inline-block';
-  });
-
-  function saveGame(g){ localStorage.setItem(STORAGE_KEY, JSON.stringify(g)); }
-  function loadGame(){ const j = localStorage.getItem(STORAGE_KEY); return j? JSON.parse(j):null; }
-
-  function generateGame(){
-    const n = parseInt(numEl.value,10);
-    if(!n || n < 2){ alert('Enter at least 2 boxes'); return; }
-    const win = Math.floor(Math.random()*n)+1;
-    const g = { id: Date.now(), total:n, winner:win };
-    saveGame(g);
-    renderBoxes(g);
-    statusEl.innerHTML = `<strong>Game ready:</strong> ${n} boxes. Winner hidden.`;
+  function tick(){
+    ctx.clearRect(0,0,W,H);
+    for(const p of particles){
+      p.y += p.speedY;
+      p.x += p.speedX;
+      p.rot += p.rotSpeed;
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6);
+      ctx.restore();
+      if(p.y > H + 20){ resetParticle(p); p.y = -10; }
+      if(p.x < -50) p.x = W + 10;
+      if(p.x > W + 50) p.x = -10;
+    }
+    requestAnimationFrame(tick);
   }
 
-  function renderBoxes(g){
+  window.addEventListener('resize', ()=>{
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  });
+
+  tick();
+})();
+
+/* ===========================
+   Game logic
+   =========================== */
+(function(){
+  const STORAGE_KEY = 'mw_luckybox_game';
+  const PLAYED_PREFIX = 'mw_luckybox_played_';
+  const toggleAdmin = document.getElementById('toggleAdmin');
+  const adminPanel = document.getElementById('adminPanel');
+  const hideAdmin = document.getElementById('hideAdmin');
+  const generateBtn = document.getElementById('generateBtn');
+  const numBoxesEl = document.getElementById('numBoxes');
+  const boxArea = document.getElementById('boxArea');
+  const statusText = document.getElementById('statusText');
+
+  // Welcome overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.style.display = 'flex';
+  overlay.innerHTML = `
+    <div class="welcomeCard" role="dialog" aria-modal="true">
+      <div style="font-size:28px;color:var(--blue);font-weight:800">Welcome to Mwosiemo Lucky Box Challenge!</div>
+      <p class="welcomeText">Test your luck — click Start to begin. Remember: each round has only one winner. Good luck!</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button id="startBtn" class="startBtn">Start Game</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const startBtn = document.getElementById('startBtn');
+
+  // storage helpers
+  function saveGame(g){ localStorage.setItem(STORAGE_KEY, JSON.stringify(g)); }
+  function loadGame(){ const j = localStorage.getItem(STORAGE_KEY); return j ? JSON.parse(j): null; }
+  function markPlayed(gameId){ localStorage.setItem(PLAYED_PREFIX + gameId, '1'); }
+  function hasPlayed(gameId){ return localStorage.getItem(PLAYED_PREFIX + gameId) === '1'; }
+
+  function createGame(total){
+    const id = Date.now().toString();
+    const winner = Math.floor(Math.random()*total)+1;
+    const g = { id, total, winner, created: new Date().toISOString() };
+    saveGame(g);
+    return g;
+  }
+
+  function renderBoxes(game){
     boxArea.innerHTML = '';
-    for(let i=1;i<=g.total;i++){
+    for(let i=1;i<=game.total;i++){
       const b = document.createElement('div');
-      b.className='box';
+      b.className = 'box';
+      b.setAttribute('data-index', i);
       b.textContent = `Box ${i}`;
-      b.addEventListener('click', ()=>clickBox(g,b,i));
+      b.addEventListener('click', ()=>handleClick(game, b, i));
       boxArea.appendChild(b);
     }
-  }
-
-  function clickBox(g,boxEl,idx){
-    if(boxArea.classList.contains('locked')) return;
-    const isWin = (idx===g.winner);
-    if(isWin){
-      boxEl.classList.add('winner');
-      boxEl.textContent='🎉 You won!';
+    // if this browser already played this game, lock and reveal
+    if(hasPlayed(game.id)){
+      lockAndReveal(game, true);
+      statusText.textContent = `Round ended — you already played this round.`;
     } else {
-      boxEl.classList.add('loser');
-      boxEl.textContent='Better luck next time';
+      statusText.textContent = `Round active — ${game.total} boxes ready.`;
     }
-    lockAllBoxes(g,idx);
-    statusEl.innerHTML = `<strong>Round ended:</strong> Box ${idx} clicked.`;
   }
 
-  function lockAllBoxes(g,clickedIdx){
-    const boxes = document.querySelectorAll('.box');
-    boxArea.classList.add('locked');
-    boxes.forEach(b=>{
-      b.style.pointerEvents='none';
-      const id=parseInt(b.textContent.replace('Box ',''));
-      if(id===g.winner && id!==clickedIdx){
-        b.classList.add('winner');
-        b.textContent='Winner';
-      } else if(id!==clickedIdx && id!==g.winner){
-        b.classList.add('loser');
-        b.textContent='Not this one';
+  function lockAndReveal(game, alreadyPlayed=false, clickedIndex=null){
+    const nodes = boxArea.querySelectorAll('.box');
+    nodes.forEach(nd=>{
+      const idx = parseInt(nd.getAttribute('data-index'),10);
+      nd.classList.add('locked');
+      nd.style.pointerEvents = 'none';
+      if(alreadyPlayed){
+        if(idx === game.winner){ nd.classList.add('winner'); nd.textContent='🎉 You won!'; }
+        else { nd.classList.add('loser'); nd.textContent='Better luck next time'; }
+      } else {
+        if(clickedIndex === idx){
+          // clicked box already shown
+        } else {
+          if(idx === game.winner){ nd.classList.add('winner'); nd.textContent='Winner'; }
+          else { nd.classList.add('loser'); nd.textContent='Not this one'; }
+        }
       }
     });
   }
 
-  genBtn.addEventListener('click', generateGame);
+  function handleClick(game, elem, idx){
+    if(hasPlayed(game.id)){
+      alert('This browser already played this round. Admin must generate a new game for another round.');
+      return;
+    }
+    const isWin = idx === game.winner;
+    if(isWin){
+      elem.classList.add('winner');
+      elem.textContent = '🎉 You won!';
+    } else {
+      elem.classList.add('loser');
+      elem.textContent = 'Better luck next time';
+    }
+    markPlayed(game.id);
+    lockAndReveal(game, false, idx);
+    statusText.textContent = `Round ended — you clicked Box ${idx}.`;
+  }
 
-  const existing = loadGame();
-  if(existing){ renderBoxes(existing); statusEl.innerHTML = `<strong>Game loaded:</strong> ${existing.total} boxes.`; }
+  // admin UI
+  toggleAdmin.addEventListener('click', ()=>{ adminPanel.style.display = 'block'; toggleAdmin.style.display = 'none'; });
+  hideAdmin.addEventListener('click', ()=>{ adminPanel.style.display = 'none'; toggleAdmin.style.display = 'inline-block'; });
+
+  generateBtn.addEventListener('click', ()=>{
+    const n = parseInt(numBoxesEl.value,10);
+    if(!n || n < 2){ alert('Enter at least 2 boxes'); return; }
+    const g = createGame(n);
+    renderBoxes(g);
+    statusText.textContent = `New round created — ${n} boxes (admin).`;
+    // ensure overlay visible to new players until they press Start
+    overlay.style.display = 'flex';
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+
+  // start button reveals boxes for the user (players click Start to begin)
+  startBtn.addEventListener('click', ()=>{
+    overlay.style.display = 'none';
+    // if a game exists, render boxes; if not, prompt user to wait for admin
+    const existing = loadGame();
+    if(existing){ renderBoxes(existing); }
+    else { boxArea.innerHTML = ''; statusText.textContent = 'Waiting for admin to generate the round...'; }
+  });
+
+  // load existing game (if any) on page load
+  (function init(){
+    const existing = loadGame();
+    if(existing){
+      // show overlay first; players must press start
+      overlay.style.display = 'flex';
+      // keep boxes ready but not interactive until player clicks Start
+      renderBoxes(existing);
+      // hide admin panel by default
+      adminPanel.style.display = 'none';
+      toggleAdmin.style.display = 'inline-block';
+    } else {
+      // no game, show overlay and inform
+      overlay.style.display = 'flex';
+      boxArea.innerHTML = '';
+      statusText.textContent = 'Waiting for admin to generate the round...';
+    }
+  })();
+
 })();
 </script>
 </body>
