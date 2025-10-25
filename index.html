@@ -282,6 +282,105 @@
 })();
 </script>
   </script>
+<!-- Admin Panel Section -->
+<style>
+  #adminLoginBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: gold;
+    color: navy;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  }
+
+  #adminPanel {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background-color: white;
+    border: 2px solid navy;
+    border-radius: 10px;
+    padding: 15px;
+    width: 260px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  }
+
+  #adminPanel input {
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+
+  #adminPanel button {
+    background-color: navy;
+    color: white;
+    border: none;
+    padding: 8px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  #adminPanel button:hover {
+    background-color: gold;
+    color: navy;
+  }
+</style>
+
+<!-- Admin Login Button -->
+<button id="adminLoginBtn">Admin</button>
+
+<!-- Hidden Admin Panel -->
+<div id="adminPanel">
+  <input type="password" id="adminPassword" placeholder="Enter admin password" />
+  <div id="adminControls" style="display:none;">
+    <input type="number" id="boxCount" placeholder="Number of boxes" />
+    <button id="generateBtn">Generate New Boxes</button>
+  </div>
+</div>
+
+<script>
+  const adminLoginBtn = document.getElementById('adminLoginBtn');
+  const adminPanel = document.getElementById('adminPanel');
+  const adminPasswordInput = document.getElementById('adminPassword');
+  const adminControls = document.getElementById('adminControls');
+  const generateBtn = document.getElementById('generateBtn');
+  const boxCountInput = document.getElementById('boxCount');
+
+  // Show/Hide panel when clicking "Admin" button
+  adminLoginBtn.addEventListener('click', () => {
+    adminPanel.style.display = adminPanel.style.display === 'block' ? 'none' : 'block';
+  });
+
+  // Check password
+  adminPasswordInput.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+      if (adminPasswordInput.value === 'mark') {
+        adminControls.style.display = 'block';
+        adminPasswordInput.style.display = 'none';
+      } else {
+        alert('Incorrect password!');
+      }
+    }
+  });
+
+  // Handle generate button (next we’ll connect it to Firebase)
+  generateBtn.addEventListener('click', () => {
+    const numBoxes = parseInt(boxCountInput.value);
+    if (isNaN(numBoxes) || numBoxes <= 0) {
+      alert('Please enter a valid number of boxes.');
+      return;
+    }
+    alert(`✅ ${numBoxes} boxes generated successfully! (Firebase link coming next)`);
+  });
+</script>
 
 <!-- Firebase SDK -->
 <script type="module">
