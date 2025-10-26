@@ -1,478 +1,161 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mwosiemo Lucky Box Challenge</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    :root{
-      --blue:#0a4fb4;
-      --gold:#d4a017;
-      --bg:#0f1724;
-      --card:#ffffff;
-      --muted:#9aa6bf;
+    body {
+      background: linear-gradient(to bottom right, navy, gold);
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px;
     }
-    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg, #eaf3ff 0%, #f8fbff 40%, #ffffff 100%);color:#05204a}
-    .wrap{max-width:980px;margin:18px auto;padding:20px}
-    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    h1{margin:0;font-size:1.4rem;color:var(--blue)}
-    .subtitle{color:var(--muted);font-size:.95rem}
-    .center{text-align:center}
-    .controls{margin:16px 0;padding:12px;border-radius:10px;background:linear-gradient(90deg, rgba(10,79,180,0.05), rgba(212,160,23,0.03));border:1px solid rgba(10,79,180,0.07)}
-    .btn{background:var(--blue);color:#fff;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
-    .btn.secondary{background:var(--gold);color:#05204a}
-    .adminToggle{background:transparent;border:2px solid var(--blue);color:var(--blue);padding:8px 10px;border-radius:8px;cursor:pointer}
-    #adminPanel{display:none;margin-top:10px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);background:#fff}
-    label{display:block;margin:8px 0;font-weight:600;color:#0a2752}
-    input[type=number]{width:120px;padding:8px;border-radius:6px;border:1px solid #ccd6ea}
-    .muted{color:var(--muted);font-size:.92rem}
-    #boxArea{margin-top:18px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
-    .box{width:120px;height:120px;border-radius:12px;border:3px solid #284a9f;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;user-select:none;background:#fff;box-shadow:0 6px 18px rgba(10,79,180,0.06);transition:transform .12s}
-    .box:active{transform:scale(.98)}
-    .box.locked{pointer-events:none;opacity:.75}
-    .winner{border-color:green;color:green;font-weight:800}
-    .loser{border-color:#b00;color:#b00}
-    .status{margin-top:12px;text-align:center;color:#0a2752;font-weight:600}
-    footer{margin-top:22px;color:var(--muted);text-align:center;font-size:.9rem}
-    /* Welcome overlay */
-    .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:40}
-    .welcomeCard{width:calc(100% - 40px);max-width:760px;padding:28px;border-radius:14px;background:linear-gradient(180deg,#ffffff, #f6fbff);box-shadow:0 20px 60px rgba(6,25,80,0.12);border:1px solid rgba(10,79,180,0.06);text-align:center}
-    .welcomeTitle{font-size:1.6rem;color:var(--blue);margin:0 0 8px}
-    .welcomeText{color:var(--muted);margin-bottom:18px}
-    .startBtn{background:linear-gradient(90deg,var(--blue),#2f61ff);border:none;color:#fff;padding:12px 20px;border-radius:10px;font-weight:700;cursor:pointer}
-    /* confetti canvas */
-    #confettiCanvas{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:10;mix-blend-mode:normal;opacity:.95}
-    /* responsive */
-    @media (max-width:520px){ .box{width:94px;height:94px;font-size:.9rem} .welcomeCard{padding:18px} }
+    h1 {
+      color: gold;
+      margin-bottom: 20px;
+    }
+    button {
+      background-color: gold;
+      color: navy;
+      border: none;
+      padding: 12px 25px;
+      font-size: 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 10px;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: navy;
+      color: gold;
+    }
+    .hidden {
+      display: none;
+    }
+    #boxes {
+      margin-top: 30px;
+    }
+    .box {
+      display: inline-block;
+      background-color: white;
+      color: navy;
+      font-weight: bold;
+      width: 100px;
+      height: 100px;
+      margin: 10px;
+      border-radius: 10px;
+      line-height: 100px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
   </style>
 </head>
 <body>
-  <canvas id="confettiCanvas"></canvas>
-
-  <div class="wrap">
-    <header>
-      <div>
-        <h1>Mwosiemo Lucky Box Challenge</h1>
-        <div class="subtitle">Blue & Gold theme — one winner per round</div>
-      </div>
-      <div style="text-align:right">
-        <button id="toggleAdmin" class="adminToggle">Show Admin Panel</button>
-      </div>
-    </header>
-
-    <section class="controls">
-      <div class="muted center">Share this single link with players. Admin must generate each round.</div>
-
-      <div id="adminPanel">
-        <h3 style="margin:0 0 6px">Admin Panel</h3>
-        <label>Number of boxes:
-          <input id="numBoxes" type="number" min="2" value="10" />
-        </label>
-        <div style="margin-top:8px">
-          <button id="generateBtn" class="btn">Generate New Game</button>
-          <button id="hideAdmin" class="btn secondary">Hide Admin Panel</button>
-        </div>
-        <p class="muted" style="margin-top:10px">After clicking "Generate New Game", the round is active and players can click one box each. Generate again to reset for a new round.</p>
-      </div>
-    </section>
-
-    <div class="status center" id="status">Status: <strong id="statusText">Waiting for admin to generate game...</strong></div>
-
-    <div id="boxArea" aria-live="polite"></div>
-
-    <footer>Created for fun — admin controls rounds. Not secure for high-stakes contests.</footer>
+  <h1>Welcome to Mwosiemo Lucky Box Challenge</h1>
+  <p>Blue & Gold theme — one winner per round</p>
+  
+  <div id="welcomeScreen">
+    <button id="startBtn">Start</button>
   </div>
 
-<script>
-/* ===========================
-   Confetti - simple continuous particle system
-   =========================== */
-(function confettiInit(){
-  const canvas = document.getElementById('confettiCanvas');
-  const ctx = canvas.getContext('2d');
-  let W = canvas.width = window.innerWidth;
-  let H = canvas.height = window.innerHeight;
-  const colors = ['#0a4fb4','#2f61ff','#ffd86b','#d4a017','#ffffff','#89b4ff'];
-  const particles = [];
-  const total = 80;
-  function rand(min,max){ return Math.random()*(max-min)+min; }
-  function resetParticle(p){
-    p.x = rand(0,W);
-    p.y = rand(-H,0);
-    p.size = rand(6,14);
-    p.speedY = rand(1,3.6);
-    p.speedX = rand(-0.6,0.6);
-    p.rot = rand(0,Math.PI*2);
-    p.rotSpeed = rand(-0.05,0.05);
-    p.color = colors[Math.floor(Math.random()*colors.length)];
-  }
-  for(let i=0;i<total;i++){ const p={x:0,y:0,size:0,speedY:0,speedX:0,rot:0,rotSpeed:0,color:'#fff'}; resetParticle(p); particles.push(p); }
+  <div id="boxesScreen" class="hidden">
+    <h2>Pick One Box!</h2>
+    <div id="boxes"></div>
+  </div>
 
-  function tick(){
-    ctx.clearRect(0,0,W,H);
-    for(const p of particles){
-      p.y += p.speedY;
-      p.x += p.speedX;
-      p.rot += p.rotSpeed;
-      ctx.save();
-      ctx.translate(p.x,p.y);
-      ctx.rotate(p.rot);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6);
-      ctx.restore();
-      if(p.y > H + 20){ resetParticle(p); p.y = -10; }
-      if(p.x < -50) p.x = W + 10;
-      if(p.x > W + 50) p.x = -10;
-    }
-    requestAnimationFrame(tick);
-  }
+  <div id="result" class="hidden"></div>
 
-  window.addEventListener('resize', ()=>{
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  });
+  <button id="adminBtn">Show Admin Panel</button>
 
-  tick();
-})();
+  <div id="adminPanel" class="hidden">
+    <input type="password" id="adminPassword" placeholder="Enter admin password">
+    <input type="number" id="boxCount" placeholder="Number of boxes">
+    <button id="generateBtn">Generate New Round</button>
+  </div>
 
-/* ===========================
-   Game logic
-   =========================== */
-(function(){
-  const STORAGE_KEY = 'mw_luckybox_game';
-  const PLAYED_PREFIX = 'mw_luckybox_played_';
-  const toggleAdmin = document.getElementById('toggleAdmin');
-  const adminPanel = document.getElementById('adminPanel');
-  const hideAdmin = document.getElementById('hideAdmin');
-  const generateBtn = document.getElementById('generateBtn');
-  const numBoxesEl = document.getElementById('numBoxes');
-  const boxArea = document.getElementById('boxArea');
-  const statusText = document.getElementById('statusText');
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-  // Welcome overlay
-  const overlay = document.createElement('div');
-  overlay.className = 'overlay';
-  overlay.style.display = 'flex';
-  overlay.innerHTML = `
-    <div class="welcomeCard" role="dialog" aria-modal="true">
-      <div style="font-size:28px;color:var(--blue);font-weight:800">Welcome to Mwosiemo Lucky Box Challenge!</div>
-      <p class="welcomeText">Test your luck — click Start to begin. Remember: each round has only one winner. Good luck!</p>
-      <div style="display:flex;gap:10px;justify-content:center">
-        <button id="startBtn" class="startBtn">Start Game</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  const startBtn = document.getElementById('startBtn');
+    const firebaseConfig = {
+      apiKey: "AIzaSyCKTB6dXTu00jEr7qhRVcA2sgywA1QOPxg",
+      authDomain: "markito-luckybox.firebaseapp.com",
+      projectId: "markito-luckybox",
+      storageBucket: "markito-luckybox.firebasestorage.app",
+      messagingSenderId: "167771824387",
+      appId: "1:167771824387:web:781b2ac43d735086760936",
+      measurementId: "G-RGHR4F4N3Q"
+    };
 
-  // storage helpers
-  function saveGame(g){ localStorage.setItem(STORAGE_KEY, JSON.stringify(g)); }
-  function loadGame(){ const j = localStorage.getItem(STORAGE_KEY); return j ? JSON.parse(j): null; }
-  function markPlayed(gameId){ localStorage.setItem(PLAYED_PREFIX + gameId, '1'); }
-  function hasPlayed(gameId){ return localStorage.getItem(PLAYED_PREFIX + gameId) === '1'; }
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    console.log("✅ Firebase connected successfully!");
 
-  function createGame(total){
-    const id = Date.now().toString();
-    const winner = Math.floor(Math.random()*total)+1;
-    const g = { id, total, winner, created: new Date().toISOString() };
-    saveGame(g);
-    return g;
-  }
+    const adminBtn = document.getElementById("adminBtn");
+    const adminPanel = document.getElementById("adminPanel");
+    const adminPasswordInput = document.getElementById("adminPassword");
+    const generateBtn = document.getElementById("generateBtn");
+    const boxCountInput = document.getElementById("boxCount");
+    const startBtn = document.getElementById("startBtn");
+    const welcomeScreen = document.getElementById("welcomeScreen");
+    const boxesScreen = document.getElementById("boxesScreen");
+    const boxesContainer = document.getElementById("boxes");
+    const resultDiv = document.getElementById("result");
 
-  function renderBoxes(game){
-    boxArea.innerHTML = '';
-    for(let i=1;i<=game.total;i++){
-      const b = document.createElement('div');
-      b.className = 'box';
-      b.setAttribute('data-index', i);
-      b.textContent = `Box ${i}`;
-      b.addEventListener('click', ()=>handleClick(game, b, i));
-      boxArea.appendChild(b);
-    }
-    // if this browser already played this game, lock and reveal
-    if(hasPlayed(game.id)){
-      lockAndReveal(game, true);
-      statusText.textContent = `Round ended — you already played this round.`;
-    } else {
-      statusText.textContent = `Round active — ${game.total} boxes ready.`;
-    }
-  }
+    let correctBox = null;
 
-  function lockAndReveal(game, alreadyPlayed=false, clickedIndex=null){
-    const nodes = boxArea.querySelectorAll('.box');
-    nodes.forEach(nd=>{
-      const idx = parseInt(nd.getAttribute('data-index'),10);
-      nd.classList.add('locked');
-      nd.style.pointerEvents = 'none';
-      if(alreadyPlayed){
-        if(idx === game.winner){ nd.classList.add('winner'); nd.textContent='🎉 You won!'; }
-        else { nd.classList.add('loser'); nd.textContent='Better luck next time'; }
-      } else {
-        if(clickedIndex === idx){
-          // clicked box already shown
-        } else {
-          if(idx === game.winner){ nd.classList.add('winner'); nd.textContent='Winner'; }
-          else { nd.classList.add('loser'); nd.textContent='Not this one'; }
-        }
+    // Show/Hide admin panel
+    adminBtn.addEventListener("click", () => {
+      adminPanel.classList.toggle("hidden");
+      adminPasswordInput.focus();
+    });
+
+    // Start button
+    startBtn.addEventListener("click", () => {
+      welcomeScreen.classList.add("hidden");
+      boxesScreen.classList.remove("hidden");
+    });
+
+    // Admin generates boxes
+    generateBtn.addEventListener("click", async () => {
+      if (adminPasswordInput.value !== "mark") {
+        alert("Wrong password!");
+        return;
+      }
+      const boxCount = parseInt(boxCountInput.value);
+      if (!boxCount || boxCount < 2) {
+        alert("Please enter at least 2 boxes.");
+        return;
+      }
+      correctBox = Math.floor(Math.random() * boxCount);
+      await setDoc(doc(db, "game", "current"), { boxCount, correctBox });
+      alert("New round generated!");
+    });
+
+    // Listen for updates from Firebase
+    onSnapshot(doc(db, "game", "current"), (docSnap) => {
+      if (!docSnap.exists()) return;
+      const data = docSnap.data();
+      boxesContainer.innerHTML = "";
+      resultDiv.classList.add("hidden");
+
+      for (let i = 0; i < data.boxCount; i++) {
+        const box = document.createElement("div");
+        box.className = "box";
+        box.textContent = "🎁";
+        box.addEventListener("click", () => {
+          if (i === data.correctBox) {
+            resultDiv.textContent = "🎉 You won!";
+          } else {
+            resultDiv.textContent = "😢 Better luck next time!";
+          }
+          resultDiv.classList.remove("hidden");
+        });
+        boxesContainer.appendChild(box);
       }
     });
-  }
-
-  function handleClick(game, elem, idx){
-    if(hasPlayed(game.id)){
-      alert('This browser already played this round. Admin must generate a new game for another round.');
-      return;
-    }
-    const isWin = idx === game.winner;
-    if(isWin){
-      elem.classList.add('winner');
-      elem.textContent = '🎉 You won!';
-    } else {
-      elem.classList.add('loser');
-      elem.textContent = 'Better luck next time';
-    }
-    markPlayed(game.id);
-    lockAndReveal(game, false, idx);
-    statusText.textContent = `Round ended — you clicked Box ${idx}.`;
-  }
-
-  // admin UI
-  toggleAdmin.addEventListener('click', ()=>{ adminPanel.style.display = 'block'; toggleAdmin.style.display = 'none'; });
-  hideAdmin.addEventListener('click', ()=>{ adminPanel.style.display = 'none'; toggleAdmin.style.display = 'inline-block'; });
-
-  generateBtn.addEventListener('click', ()=>{
-    const n = parseInt(numBoxesEl.value,10);
-    if(!n || n < 2){ alert('Enter at least 2 boxes'); return; }
-    const g = createGame(n);
-    renderBoxes(g);
-    statusText.textContent = `New round created — ${n} boxes (admin).`;
-    // ensure overlay visible to new players until they press Start
-    overlay.style.display = 'flex';
-    window.scrollTo({top:0,behavior:'smooth'});
-  });
-
-  // start button reveals boxes for the user (players click Start to begin)
-  startBtn.addEventListener('click', ()=>{
-    overlay.style.display = 'none';
-    // if a game exists, render boxes; if not, prompt user to wait for admin
-    const existing = loadGame();
-    if(existing){ renderBoxes(existing); }
-    else { boxArea.innerHTML = ''; statusText.textContent = 'Waiting for admin to generate the round...'; }
-  });
-
-  // load existing game (if any) on page load
-  (function init(){
-    const existing = loadGame();
-    if(existing){
-      // show overlay first; players must press start
-      overlay.style.display = 'flex';
-      // keep boxes ready but not interactive until player clicks Start
-      renderBoxes(existing);
-      // hide admin panel by default
-      adminPanel.style.display = 'none';
-      toggleAdmin.style.display = 'inline-block';
-    } else {
-      // no game, show overlay and inform
-      overlay.style.display = 'flex';
-      boxArea.innerHTML = '';
-      statusText.textContent = 'Waiting for admin to generate the round...';
-    }
-  })();
-
-})();
-  <!-- Welcome Screen -->
-<div id="welcomeArea" style="text-align:center; padding:100px; color:navy;">
-  <h1>Welcome to Mwosiemo Lucky Box Challenge</h1>
-  <button id="startBtn" style="background-color:gold; color:navy; padding:15px 30px; border:none; border-radius:10px; font-size:18px; font-weight:bold; cursor:pointer;">
-    Start
-  </button>
-</div>
-
-<!-- Boxes Screen -->
-<div id="boxesArea" style="display:none; text-align:center; padding:40px;"></div>
-
-</script>
   </script>
-// Show/Hide panel when clicking "Admin" button
-adminLoginBtn.addEventListener('click', () => {
-  if (adminPanel.style.display === 'block') {
-    adminPanel.style.display = 'none';
-  } else {
-    adminPanel.style.display = 'block';
-    adminPasswordInput.focus();
-  }
-});
-
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: gold;
-    color: navy;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
-  }
-
-  #adminPanel {
-    display: none;
-    position: fixed;
-    bottom: 80px;
-    right: 20px;
-    background-color: white;
-    border: 2px solid navy;
-    border-radius: 10px;
-    padding: 15px;
-    width: 260px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
-  }
-
-  #adminPanel input {
-    width: 100%;
-    margin-bottom: 8px;
-    padding: 6px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-
-  #adminPanel button {
-    background-color: navy;
-    color: white;
-    border: none;
-    padding: 8px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-
-  #adminPanel button:hover {
-    background-color: gold;
-    color: navy;
-  }
-</style>
-
-<!-- Admin Login Button -->
-<button id="adminLoginBtn">Admin</button>
-
-<!-- Hidden Admin Panel -->
-<div id="adminPanel">
-  <input type="password" id="adminPassword" placeholder="Enter admin password" />
-  <div id="adminControls" style="display:none;">
-    <input type="number" id="boxCount" placeholder="Number of boxes" />
-    <button id="generateBtn">Generate New Boxes</button>
-  </div>
-</div>
-
-<script>
-  const adminLoginBtn = document.getElementById('adminLoginBtn');
-  const adminPanel = document.getElementById('adminPanel');
-  const adminPasswordInput = document.getElementById('adminPassword');
-  const adminControls = document.getElementById('adminControls');
-  const generateBtn = document.getElementById('generateBtn');
-  const boxCountInput = document.getElementById('boxCount');
-
-  // Show/Hide panel when clicking "Admin" button
-  adminLoginBtn.addEventListener('click', () => {
-    adminPanel.style.display = adminPanel.style.display === 'block' ? 'none' : 'block';
-  });
-
-  // Check password
-  adminPasswordInput.addEventListener('keyup', (e) => {
-    if (e.key === 'Enter') {
-      if (adminPasswordInput.value === 'mark') {
-        adminControls.style.display = 'block';
-        adminPasswordInput.style.display = 'none';
-      } else {
-        alert('Incorrect password!');
-      }
-    }
-  });
-
-  // Handle generate button (next we’ll connect it to Firebase)
-  generateBtn.addEventListener('click', () => {
-    const numBoxes = parseInt(boxCountInput.value);
-    if (isNaN(numBoxes) || numBoxes <= 0) {
-      alert('Please enter a valid number of boxes.');
-      return;
-    }
-    alert(`✅ ${numBoxes} boxes generated successfully! (Firebase link coming next)`);
-  });
-</script>
-
-<!-- Firebase SDK -->
-<script type="module">
-  // Import the Firebase libraries
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-  // Your Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyCKTB6dXTu00jEr7qhRVcA2sgywA1QOPxg",
-    authDomain: "markito-luckybox.firebaseapp.com",
-    projectId: "markito-luckybox",
-    storageBucket: "markito-luckybox.firebasestorage.app",
-    messagingSenderId: "167771824387",
-    appId: "1:167771824387:web:781b2ac43d735086760936",
-    measurementId: "G-RGHR4F4N3Q"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  console.log("✅ Firebase connected successfully!");
-  // DOM elements
-const startBtn = document.getElementById("startBtn");
-const welcomeArea = document.getElementById("welcomeArea");
-const boxesArea = document.getElementById("boxesArea");
-
-// When user clicks "Start"
-startBtn.addEventListener("click", () => {
-  welcomeArea.style.display = "none";
-  boxesArea.style.display = "block";
-  listenForBoxes();
-});
-
-// Function to listen for box updates
-import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-function listenForBoxes() {
-  const gameDoc = doc(db, "gameState", "current");
-
-  onSnapshot(gameDoc, (snapshot) => {
-    const data = snapshot.data();
-    boxesArea.innerHTML = ""; // clear
-
-    if (!data || !data.roundActive) {
-      boxesArea.innerHTML = "<p>Please wait for admin to start a new round.</p>";
-      return;
-    }
-
-    for (let i = 1; i <= data.boxes; i++) {
-      const btn = document.createElement("button");
-      btn.textContent = "Box " + i;
-      btn.style.cssText =
-        "margin:10px; padding:20px 25px; font-size:18px; border:none; border-radius:10px; background-color:navy; color:white; cursor:pointer;";
-      btn.onclick = () => {
-        if (i === data.winner) {
-          btn.style.backgroundColor = "gold";
-          btn.textContent = "🎉 You Won!";
-        } else {
-          btn.style.backgroundColor = "gray";
-          btn.textContent = "❌ Try Again!";
-        }
-        btn.disabled = true;
-      };
-      boxesArea.appendChild(btn);
-    }
-  });
-}
-
-</script>
-
-</body>
-</html>
-
 </body>
 </html>
