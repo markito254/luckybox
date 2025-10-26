@@ -422,6 +422,53 @@ adminLoginBtn.addEventListener('click', () => {
   const db = getFirestore(app);
 
   console.log("✅ Firebase connected successfully!");
+  // DOM elements
+const startBtn = document.getElementById("startBtn");
+const welcomeArea = document.getElementById("welcomeArea");
+const boxesArea = document.getElementById("boxesArea");
+
+// When user clicks "Start"
+startBtn.addEventListener("click", () => {
+  welcomeArea.style.display = "none";
+  boxesArea.style.display = "block";
+  listenForBoxes();
+});
+
+// Function to listen for box updates
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+function listenForBoxes() {
+  const gameDoc = doc(db, "gameState", "current");
+
+  onSnapshot(gameDoc, (snapshot) => {
+    const data = snapshot.data();
+    boxesArea.innerHTML = ""; // clear
+
+    if (!data || !data.roundActive) {
+      boxesArea.innerHTML = "<p>Please wait for admin to start a new round.</p>";
+      return;
+    }
+
+    for (let i = 1; i <= data.boxes; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = "Box " + i;
+      btn.style.cssText =
+        "margin:10px; padding:20px 25px; font-size:18px; border:none; border-radius:10px; background-color:navy; color:white; cursor:pointer;";
+      btn.onclick = () => {
+        if (i === data.winner) {
+          btn.style.backgroundColor = "gold";
+          btn.textContent = "🎉 You Won!";
+        } else {
+          btn.style.backgroundColor = "gray";
+          btn.textContent = "❌ Try Again!";
+        }
+        btn.disabled = true;
+      };
+      boxesArea.appendChild(btn);
+    }
+  });
+}
+
 </script>
 
 </body>
